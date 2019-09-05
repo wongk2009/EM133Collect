@@ -1,0 +1,1 @@
+This file is sent from Linux to Win10 through tcp protocol.

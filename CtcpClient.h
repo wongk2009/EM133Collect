@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -18,7 +19,9 @@ class CtcpClient{
 
         int CreateNewTcpSocket(const char *ip, const int port);
         
-    private:
+        unsigned long get_file_size(const char *);
+
+//    private:
         int sockfd;
         struct sockaddr_in servaddr; 
 };

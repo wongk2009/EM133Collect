@@ -23,3 +23,13 @@ int CtcpClient::CreateNewTcpSocket(const char *ip, const int port){
     }
     return 0;
 }
+unsigned long CtcpClient::get_file_size(const char *path){
+    unsigned long filesize = -1;	
+    struct stat statbuff;
+    if(stat(path, &statbuff) < 0){
+	return filesize;
+    }else{
+	filesize = statbuff.st_size;
+    }
+    return filesize;
+}
