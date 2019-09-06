@@ -5,7 +5,7 @@
 # source object target
 SOURCE := main.cpp 
 TARGET := main.out
-OBJS := main.o CEM133Collector.o
+OBJS := main.o CEM133Collector.o CtcpClient.o
 
 # compile and lib parameter
 #CC      := g++
@@ -27,6 +27,9 @@ main.o:main.cpp CEM133Collector.o
 	@$(CC) -std=c++11 -c -g $(CFLAGS) main.cpp -o main.o
 CEM133Collector.o:CEM133Collector.h CEM133Collector.cpp
 	@$(CC) -std=c++11 -c -g $(CFLAGS) CEM133Collector.cpp -o CEM133Collector.o
+CtcpClient.o:CtcpClient.h CtcpClient.cpp
+	@$(CC) -std=c++11 -c -g $(CFLAGS) CtcpClient.cpp -o CtcpClient.o
+
 .PHONY:clean
 clean:
 	@rm main.out $(OBJS) 
