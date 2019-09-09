@@ -14,17 +14,19 @@ using namespace std;
 
 int main(int argc, char *argv[]){
     cout << "This is EM133 collector program." << endl;
-    CEM133Collector EM133Dev;
-    EM133Dev.SetUpTCPServer("192.168.146.100", 502);
+//    CEM133Collector EM133Dev;
+//    EM133Dev.SetUpTCPServer("192.168.146.100", 502);
+    CtcpClient TcpClientDev;
+    TcpClientDev.CreateNewTcpSocket("192.168.146.100", 502);
     while(1) {
-        EM133Dev.Update_Log_File();
+       // EM133Dev.Update_Log_File();
+        cout << TcpClientDev.Get_Current_File_Name() << endl;
+        sleep(1);
     }
 
-//    CtcpClient TcpClientDev;
-//    TcpClientDev.CreateNewTcpSocket("192.168.146.100", 502);
 //    long long filesize = TcpClientDev.get_file_size("2019-08-25-131622.jpg");
 //    cout << "FileSize: " << filesize << endl;
-
+//
 //    //输入文件名 
 //    char file_name[FILE_NAME_MAX_SIZE + 1];
 //    memset(file_name, 0, FILE_NAME_MAX_SIZE + 1);
@@ -33,15 +35,6 @@ int main(int argc, char *argv[]){
 //
 //    char buffer[BUFFER_SIZE];
 //    memset(buffer, 0, BUFFER_SIZE);
-////    strncpy(buffer, file_name, strlen(file_name) > BUFFER_SIZE ? BUFFER_SIZE : strlen(file_name));
-////
-////    //向服务器发送文件名 
-////    if (send(TcpClientDev.sockfd, buffer, BUFFER_SIZE, 0) < 0)
-////    {
-////	printf("Send File Name Failed\n");
-////	system("pause");
-////	exit(1);
-////    }
 //
 //    FILE* fp = fopen(file_name, "rb"); //windows下是"rb",表示打开一个只读的二进制文件 
 //    if (NULL == fp)
@@ -75,5 +68,5 @@ int main(int argc, char *argv[]){
 //	fclose(fp);
 //	printf("File: %s Transfer Successful!\n", file_name);
 //    }
-//    return 0;
+    return 0;
 }

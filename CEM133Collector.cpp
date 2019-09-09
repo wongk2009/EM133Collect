@@ -136,6 +136,9 @@ int CEM133Collector::Update_Log_File() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
          m_File_Cnt++;
+         if(m_File_Cnt == 50000) {
+             m_File_Cnt = 1;
+         }
          Create_New_Log_File();
     }
     m_Data_Cnt++;
