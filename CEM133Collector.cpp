@@ -123,7 +123,7 @@ int CEM133Collector::Create_New_Log_File() {
     ofstream out;
     out.open(m_File_Name, ofstream::out);
     if(out) {
-         out << "Date,V1,V2,V3,I1,I2,I3,Total kW,Total kvar,Total kVA,Total PF,Frequency" << endl;	
+         out << "Date,V1,V2,V3,I1,I2,I3,Total kW,Total kvar,Total kVA,Total PF,Frequency" << "\r\n";	
     } 
     else {
          return -1;
@@ -136,20 +136,20 @@ int CEM133Collector::Update_Log_File() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
          m_File_Cnt++;
-         if(m_File_Cnt == 50000) {
+         if(m_File_Cnt == MAX_FILE_CNT) {
              m_File_Cnt = 1;
          }
          Create_New_Log_File();
     }
     m_Data_Cnt++;
-    if(CEM133Collector::SaveEM133Data()) {
+    if(SaveEM133Data()) {
          ofstream out;
          out.open(m_File_Name, ofstream::out | ofstream::app);
          if(out) {
               out << m_Current_Time << "," << m_tab_reg1[0] << ","  << m_tab_reg1[1] << ","  << m_tab_reg1[2] << ","  
                   << m_tab_reg1[3] << ","  << m_tab_reg1[4] << ","  << m_tab_reg1[5] << ","  
                   << m_tab_reg2[0] << ","  << m_tab_reg2[1] << ","  << m_tab_reg2[2] << ","  << m_tab_reg2[3] << "," 
-                  << m_tab_reg3[2] << endl;
+                  << m_tab_reg3[2] << "\r\n";
          } 
          else {
               return -1;

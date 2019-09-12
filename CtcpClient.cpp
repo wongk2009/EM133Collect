@@ -5,7 +5,7 @@ CtcpClient::CtcpClient(){
 }
 
 CtcpClient::~CtcpClient(){
-
+    close(sockfd);
 }
 
 int CtcpClient::CreateNewTcpSocket(const char *ip, const int port){
@@ -50,11 +50,73 @@ string CtcpClient::Get_Current_File_Name() {
                 return m_Current_File_Name;
             }
             else {
-                return string("error");
+                //return m_File_Name;
             }
         }
         else {
-            return string("error");
+            //return m_File_Name;
         }
     } while(1);
+}
+
+int CtcpClient::Upload_File() {
+    CreateNewTcpSocket("192.168.146.100", 1502);
+
+    string file_name = Get_Current_File_Name(); 
+    memset(buffer, 0, BUFFER_SIZE);
+
+    FILE* fp = fopen(file_name.c_str(), "rb"); //windows下是"rb",表示打开一个只读的二进制文件 
+    if (NULL == fp)
+    {
+	printf("File: %s Not Found\n", file_name.c_str());
+        return -1;
+    }
+    else
+    {
+        string tmp_File_Name_Last = file_name.substr(5, sizeof(file_name));
+        strncpy(buffer, tmp_File_Name_Last.c_str(), strlen(tmp_File_Name_Last.c_str()) > BUFFER_SIZE ? BUFFER_SIZE : strlen(tmp_File_Name_Last.c_str()));
+
+        //向服务器发送文件名 
+        if (send(sockfd, buffer, BUFFER_SIZE, 0) < 0)
+        {
+        	printf("Send File Name Failed\n");
+                return -1;
+        }
+	memset(buffer, 0, BUFFER_SIZE);
+
+        m_Full_Size = get_file_size(file_name.c_str());
+        string strFileSize = to_string(m_Full_Size);
+        strncpy(buffer, strFileSize.c_str(), strlen(strFileSize.c_str()) > BUFFER_SIZE ? BUFFER_SIZE : strlen(strFileSize.c_str()));
+        //向服务器发送文件大小 
+        if (send(sockfd, buffer, BUFFER_SIZE, 0) < 0)
+        {
+        	printf("Send File Name Failed\n");
+                return -1;
+        }
+	memset(buffer, 0, BUFFER_SIZE);
+
+	int length = 0;
+	while ((length = fread(buffer, sizeof(char), BUFFER_SIZE, fp)) > 0)
+	{
+                m_Sent_Size += length;
+                m_Remained_Size = m_Full_Size - m_Sent_Size;
+          	if (send(sockfd, buffer, length, 0) < 0)
+		{
+			printf("Send File: %s Failed\n", file_name.c_str());
+			break;
+		}
+		memset(buffer, 0, BUFFER_SIZE);
+	}
+
+        m_Sent_Size = 0;
+        m_Full_Size = 0;
+        m_Remained_Size = 0;
+	fclose(fp);
+	printf("File: %s Transfer Successful!\n", file_name.c_str());
+        if(remove(file_name.c_str()) < 0)
+        {
+           cout << "Remove File Failed!" << endl;        
+        }
+    }
+    return 0;
 }

@@ -9,7 +9,13 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <fstream>
+#include <errno.h>
+#include <cstdio>
+
+#define BUFFER_SIZE 1024 
+#define FILE_NAME_MAX_SIZE 512 
 
 using namespace std;
 
@@ -19,9 +25,7 @@ class CtcpClient{
         ~CtcpClient();
 
         int CreateNewTcpSocket(const char *ip, const int port);
-        
-        unsigned long get_file_size(const char *);
-        string Get_Current_File_Name();
+        int Upload_File();
 
     private:
         int sockfd;
@@ -33,7 +37,13 @@ class CtcpClient{
         string str_File_Name_Suffix = ".csv";
         string m_Current_File_Name;
 
-        //string Get_Current_File_Name();
+        unsigned int m_Sent_Size = 0;
+        unsigned int m_Full_Size = 0;
+        unsigned int m_Remained_Size = 0;
+        char buffer[BUFFER_SIZE];
+
+        string Get_Current_File_Name();
+        unsigned long get_file_size(const char *);
 };
 
 
