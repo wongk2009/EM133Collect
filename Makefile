@@ -8,10 +8,10 @@ TARGET := main.out
 OBJS := main.o CEM133Collector.o CtcpClient.o
 
 # compile and lib parameter
-CC      := g++
-#CC      := /home/huangzk/Downloads/CrossCompile_for_RPI/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-g++#Cross Compile for rpi
-LDFLAGS := -L/usr/local/lib
-#LDFLAGS := -L/home/huangzk/Downloads/CrossCompile_for_RPI/libmodbus/lib #lib for rpi
+#CC      := g++
+CC      := /home/huangzk/Downloads/CrossCompile_for_RPI/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-g++#Cross Compile for rpi
+#LDFLAGS := -L/usr/local/lib
+LDFLAGS := -L/home/huangzk/Downloads/CrossCompile_for_RPI/libmodbus/lib #lib for rpi
 LIBS    := -lmodbus -pthread
 DEFINES :=
 INCLUDE := -I/usr/local/include/modbus

@@ -27,7 +27,7 @@ int main(int argc, char *argv[]){
 
 void * EM133DataProcess(void *) {
     CEM133Collector EM133Dev;
-    EM133Dev.SetUpTCPServer("192.168.146.100", 502);
+    EM133Dev.SetUpTCPServer("169.254.142.221", 502);
     while(1) {
         EM133Dev.Update_Log_File();
         //printf("----------EM133Dev Test---------\n");

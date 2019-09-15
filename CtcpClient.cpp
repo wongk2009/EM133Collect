@@ -60,7 +60,7 @@ string CtcpClient::Get_Current_File_Name() {
 }
 
 int CtcpClient::Upload_File() {
-    CreateNewTcpSocket("192.168.146.100", 1502);
+    CreateNewTcpSocket("193.112.215.89", 1502);
 
     string file_name = Get_Current_File_Name(); 
     memset(buffer, 0, BUFFER_SIZE);
@@ -73,7 +73,10 @@ int CtcpClient::Upload_File() {
     }
     else
     {
-        string tmp_File_Name_Last = file_name.substr(5, sizeof(file_name));
+        string::iterator ItFileNameBeg = file_name.begin() + 5;
+        string::iterator ItFileNameEnd = file_name.end();
+        int iSubStrNum = ItFileNameEnd - ItFileNameBeg;
+        string tmp_File_Name_Last = file_name.substr(5, iSubStrNum);
         strncpy(buffer, tmp_File_Name_Last.c_str(), strlen(tmp_File_Name_Last.c_str()) > BUFFER_SIZE ? BUFFER_SIZE : strlen(tmp_File_Name_Last.c_str()));
 
         //向服务器发送文件名 
