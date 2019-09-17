@@ -3,6 +3,7 @@
 CEM133Collector::CEM133Collector(){
     //设置modbus超时时间为1000毫秒
     m_old_response_to_sec = 0;
+    m_old_response_to_msec = 1000;
     m_old_response_to_usec = 1000000;
     
     sys_Usec_Time();
@@ -14,7 +15,7 @@ CEM133Collector::~CEM133Collector(){
 
 }
 
-int CEM133Collector::SetUpTCPServer(const char *ip = "127.0.0.1", int port = 1502){
+int CEM133Collector::SetUpTCPSocket(const char *ip = "127.0.0.1", int port = 1502){
     ctx = modbus_new_tcp(ip, port);
     modbus_set_debug(ctx, TRUE);
 
@@ -42,16 +43,17 @@ int CEM133Collector::SetUpTCPServer(const char *ip = "127.0.0.1", int port = 150
 }
 
 int CEM133Collector::ReadEM133Data(modbus_t *ctx, int addr, int nb, uint16_t *dest) {
-
     int rc = modbus_read_registers(ctx, addr, nb, dest);
     if (rc == -1) {
         fprintf(stderr, "%s\n", modbus_strerror(errno));
         return -1;
     }
 
+    #ifndef NDEBUG
     for (int i = 0; i < rc; i++) {
          printf("reg[%d]=%d (0x%X)\n", i, tab_reg[i], tab_reg[i]);
     }
+    #endif
     return rc;
 }
 
@@ -67,25 +69,30 @@ int CEM133Collector::SaveEM133Data() {
     for (int i = 0; i < rc1; i++) {
          long lTmpData = tab_reg[i] + (tab_reg[++i] << 16);
          m_tab_reg1.push_back(lTmpData);
-         cout << "m_tab_reg1[" << m_tab_reg1.size() - 1 << "]= " << m_tab_reg1.back() << endl;
+         #ifndef NDEBUG
+             cout << "m_tab_reg1[" << m_tab_reg1.size() - 1 << "]= " << m_tab_reg1.back() << endl;
+         #endif
     }
     int rc2 = ReadEM133Data(ctx, 13696, 20, tab_reg);
     m_tab_reg2.clear();
     for (int i = 0; i < rc2; i++) {
          long lTmpData = tab_reg[i] + (tab_reg[++i] << 16);
          m_tab_reg2.push_back(lTmpData);
-         cout << "m_tab_reg2[" << m_tab_reg2.size() - 1 << "]= " << m_tab_reg2.back() << endl;
+         #ifndef NDEBUG
+             cout << "m_tab_reg2[" << m_tab_reg2.size() - 1 << "]= " << m_tab_reg2.back() << endl;
+         #endif
     }
     int rc3 = ReadEM133Data(ctx, 13824, 10, tab_reg);
     m_tab_reg3.clear();
     for (int i = 0; i < rc3; i++) {
          long lTmpData = tab_reg[i] + (tab_reg[++i] << 16);
          m_tab_reg3.push_back(lTmpData);
-         cout << "m_tab_reg3[" << m_tab_reg3.size() - 1 << "]= " << m_tab_reg3.back() << endl;
+         #ifndef NDEBUG
+             cout << "m_tab_reg3[" << m_tab_reg3.size() - 1 << "]= " << m_tab_reg3.back() << endl;
+         #endif
     }
 
     sys_Usec_Time();
-    cout << m_Current_Time << endl;
     
     return ((rc1 = -1) || (rc2 = -1) || (rc3 = -1)) ? -1 : 1;
 }
@@ -132,7 +139,7 @@ int CEM133Collector::Create_New_Log_File() {
     return 0;
 }
 
-int CEM133Collector::Update_Log_File() {
+int CEM133Collector::UpdateLogFile() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
          m_File_Cnt++;
@@ -161,3 +168,132 @@ int CEM133Collector::Update_Log_File() {
     }
     return 0;
 }
+
+int CEM133Collector::SetUpFastTCPSocket(const char *ip = "127.0.0.1", int port = 1502){
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(port); 
+    inet_pton(AF_INET, ip, &servaddr.sin_addr); 
+    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&m_old_response_to_msec, sizeof(uint32_t));
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&m_old_response_to_msec, sizeof(uint32_t));
+    if(connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == 0){
+        printf("Connect %s successfully!\n", ip);
+    }
+    else{
+        perror("connect");
+	return -1;
+    }
+    read_registers_cmd[6] = m_DEVICE_ID; 
+    return 0;
+}
+
+int CEM133Collector::FastReadEM133Data(int sockfd, int addr, int nb, uint16_t *dest) {
+    uint16_t Transaction_ID_Hi = (m_Transaction_ID >> 8) & 0xFF;
+    uint16_t Transaction_ID_Lo = m_Transaction_ID & 0xFF;
+    read_registers_cmd[0] = Transaction_ID_Hi;
+    read_registers_cmd[1] = Transaction_ID_Lo;
+    m_Transaction_ID++;
+    uint16_t addr_Hi = (addr >> 8) & 0xFF;
+    uint16_t addr_Lo = addr & 0xFF;
+    read_registers_cmd[8] = addr_Hi;
+    read_registers_cmd[9] = addr_Lo;
+    uint16_t nb_Hi = (nb >> 8) & 0xFF;
+    uint16_t nb_Lo = nb & 0xFF;
+    read_registers_cmd[10] = nb_Hi;
+    read_registers_cmd[11] = nb_Lo;
+
+    memset(buffer, 0, BUFFER_SIZE);
+    memcpy(buffer, read_registers_cmd, sizeof(read_registers_cmd) > BUFFER_SIZE ? BUFFER_SIZE : sizeof(read_registers_cmd));
+    if (send(sockfd, buffer, sizeof(read_registers_cmd), 0) < 0)
+    {
+      	printf("Read Registers Failed\n");
+        return -1;
+    }
+
+    memset(buffer, 0, BUFFER_SIZE);
+    int rc = recv(sockfd, buffer, BUFFER_SIZE, 0);
+    if (rc == -1) {
+        perror("Receive Error");
+        return -1;
+    }
+    memset(dest, 0, BUFFER_SIZE);
+    //memcpy(dest, buffer, rc);
+
+    int iDataCnt = buffer[8];
+    for (int i = 0, j = 0; i < iDataCnt; i = i + 2, j++) {
+	 uint16_t uiData_Hi = buffer[i + 9] & 0x00FF;
+         uint16_t uiData_Lo = buffer[i + 9 + 1] & 0x00FF;
+         *(dest + j) = (uiData_Hi << 8) + uiData_Lo;
+         #ifndef NDEBUG
+             printf("reg[%d]=%d (0x%X)\n", j, *(dest + j), *(dest + j));
+         #endif
+    }
+    memset(buffer, 0, BUFFER_SIZE);
+    return rc;
+}
+
+int CEM133Collector::FastSaveEM133Data() {
+    int rc1 = FastReadEM133Data(sockfd, 13312, 30, tab_reg);
+    m_tab_reg1.clear();
+    for (int i = 0; i < rc1; i++) {
+         long lTmpData = tab_reg[i] + (tab_reg[++i] << 16);
+         m_tab_reg1.push_back(lTmpData);
+         #ifndef NDEBUG
+             cout << "m_tab_reg1[" << m_tab_reg1.size() - 1 << "]= " << m_tab_reg1.back() << endl;
+         #endif
+    }
+    int rc2 = FastReadEM133Data(sockfd, 13696, 20, tab_reg);
+    m_tab_reg2.clear();
+    for (int i = 0; i < rc2; i++) {
+         long lTmpData = tab_reg[i] + (tab_reg[++i] << 16);
+         m_tab_reg2.push_back(lTmpData);
+         #ifndef NDEBUG
+             cout << "m_tab_reg2[" << m_tab_reg2.size() - 1 << "]= " << m_tab_reg2.back() << endl;
+         #endif
+    }
+    int rc3 = FastReadEM133Data(sockfd, 13824, 10, tab_reg);
+    m_tab_reg3.clear();
+    for (int i = 0; i < rc3; i++) {
+         long lTmpData = tab_reg[i] + (tab_reg[++i] << 16);
+         m_tab_reg3.push_back(lTmpData);
+         #ifndef NDEBUG
+             cout << "m_tab_reg3[" << m_tab_reg3.size() - 1 << "]= " << m_tab_reg3.back() << endl;
+         #endif
+    }
+
+    sys_Usec_Time();
+    
+    return ((rc1 = -1) || (rc2 = -1) || (rc3 = -1)) ? -1 : 1;
+}
+
+int CEM133Collector::FastUpdateLogFile() {
+    if(m_Data_Cnt == MAX_DATA_CNT) {
+         m_Data_Cnt = 0;
+         m_File_Cnt++;
+         if(m_File_Cnt == MAX_FILE_CNT) {
+             m_File_Cnt = 1;
+         }
+         Create_New_Log_File();
+    }
+    m_Data_Cnt++;
+    if(FastSaveEM133Data()) {
+         ofstream out;
+         out.open(m_File_Name, ofstream::out | ofstream::app);
+         if(out) {
+              out << m_Current_Time << "," << m_tab_reg1[0] << ","  << m_tab_reg1[1] << ","  << m_tab_reg1[2] << ","  
+                  << m_tab_reg1[3] << ","  << m_tab_reg1[4] << ","  << m_tab_reg1[5] << ","  
+                  << m_tab_reg2[0] << ","  << m_tab_reg2[1] << ","  << m_tab_reg2[2] << ","  << m_tab_reg2[3] << "," 
+                  << m_tab_reg3[2] << "\r\n";
+         } 
+         else {
+              return -1;
+         }  
+         out.close();
+    }
+    else {
+         return -1;
+    }
+    return 0;
+}
+

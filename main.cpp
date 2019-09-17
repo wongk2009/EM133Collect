@@ -15,6 +15,12 @@ void * TcpClientUploadProcess(void *);
 
 int main(int argc, char *argv[]){
     cout << "This is EM133 collector program." << endl;
+//    CEM133Collector EM133Dev;
+//    EM133Dev.SetUpTCPSocket("192.168.146.100", 502);
+//    EM133Dev.SaveEM133Data();
+//    cout << EM133Dev.m_Current_Time << endl;
+//    EM133Dev.SaveEM133Data();
+//    cout << EM133Dev.m_Current_Time << endl;
     pthread_t thread[2];
     pthread_mutex_t mut;
     pthread_mutex_init(&mut, NULL);
@@ -27,12 +33,14 @@ int main(int argc, char *argv[]){
 
 void * EM133DataProcess(void *) {
     CEM133Collector EM133Dev;
-    EM133Dev.SetUpTCPServer("169.254.142.221", 502);
+    //EM133Dev.SetUpTCPSocket("169.254.142.221", 502);
+    EM133Dev.SetUpTCPSocket("192.168.146.100", 502);
+    //EM133Dev.SetUpFastTCPSocket("192.168.146.100", 502);
     while(1) {
-        EM133Dev.Update_Log_File();
-        //printf("----------EM133Dev Test---------\n");
+        EM133Dev.UpdateLogFile();
+        //EM133Dev.FastUpdateLogFile();
         //sleep(1);
-}
+    }
     pthread_exit(NULL);      
 }
 
@@ -41,7 +49,6 @@ void * TcpClientUploadProcess(void *) {
     //TcpClientDev.CreateNewTcpSocket("192.168.146.100", 1502);
     while(1) {
         TcpClientDev.Upload_File();
-        //printf("TCP Test.\n");
         sleep(1);
 }
     pthread_exit(NULL);      
