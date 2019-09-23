@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <math.h>
 
 using namespace std;
 
@@ -34,7 +35,7 @@ class CEM133Collector{
         uint32_t m_old_response_to_usec;       
 
         uint16_t tab_reg[1024];
-        //string m_Current_Time;
+        string m_Current_Time;
 
         int SetUpTCPSocket(const char *ip, int port);
         int ReadEM133Data(modbus_t *ctx, int addr, int nb, uint16_t *dest);
@@ -47,6 +48,9 @@ class CEM133Collector{
         int SetUpFastTCPSocket(const char *ip, int port);
         int FastReadEM133Data(int sockfd, int addr, int nb, uint16_t *dest);
         int FastSaveEM133Data();
+
+        int ReadEM133SingleCMD();
+        int QuickUpdateLogFile(); 
 
     private:
         modbus_t *ctx;
@@ -63,7 +67,7 @@ class CEM133Collector{
         string str_File_Name_Suffix = ".csv";
 
         time_t curtime;
-        string m_Current_Time;
+        //string m_Current_Time;
         vector<long> m_tab_reg1;
         vector<long> m_tab_reg2;
         vector<long> m_tab_reg3;

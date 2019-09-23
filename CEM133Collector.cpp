@@ -1,5 +1,4 @@
-#include "CEM133Collector.h"
-
+#include "CEM133Collector.h" 
 CEM133Collector::CEM133Collector(){
     //设置modbus超时时间为1000毫秒
     m_old_response_to_sec = 0;
@@ -297,3 +296,53 @@ int CEM133Collector::FastUpdateLogFile() {
     return 0;
 }
 
+int CEM133Collector::ReadEM133SingleCMD() {
+    int rc1 = ReadEM133Data(ctx, 13312, 36, tab_reg);
+    m_tab_reg1.clear();
+    for (int i = 0; i < rc1; i++) {
+         long lTmpData = tab_reg[i] + (tab_reg[++i] << 16);
+         m_tab_reg1.push_back(lTmpData);
+         #ifndef NDEBUG
+             cout << "m_tab_reg1[" << m_tab_reg1.size() - 1 << "]= " << m_tab_reg1.back() << endl;
+         #endif
+    }
+
+    sys_Usec_Time();
+    
+    return rc1 = -1 ? -1 : 1;
+}
+
+int CEM133Collector::QuickUpdateLogFile() {
+    if(m_Data_Cnt == MAX_DATA_CNT) {
+         m_Data_Cnt = 0;
+         m_File_Cnt++;
+         if(m_File_Cnt == MAX_FILE_CNT) {
+             m_File_Cnt = 1;
+         }
+         Create_New_Log_File();
+    }
+    m_Data_Cnt++;
+    if(ReadEM133SingleCMD()) {
+         long lTotal_kW = m_tab_reg1[6] + m_tab_reg1[7] + m_tab_reg1[8];
+         long lTotal_kvar = m_tab_reg1[9] + m_tab_reg1[10] + m_tab_reg1[11];
+         long lTotal_kVA = m_tab_reg1[12] + m_tab_reg1[13] + m_tab_reg1[14];
+         long lTotal_PF = lTotal_kW / lTotal_kVA;
+         //long lTotal_PF = sqrt((pow(m_tab_reg1[15],2) + pow(m_tab_reg1[16],2) + pow(m_tab_reg1[17], 2)) / 3);
+         ofstream out;
+         out.open(m_File_Name, ofstream::out | ofstream::app);
+         if(out) {
+              out << m_Current_Time << "," << m_tab_reg1[0] << ","  << m_tab_reg1[1] << ","  << m_tab_reg1[2] << ","  
+                  << m_tab_reg1[3] << ","  << m_tab_reg1[4] << ","  << m_tab_reg1[5] << ","  
+                  << lTotal_kW << ","  << lTotal_kvar << ","  << lTotal_kVA << ","  << lTotal_PF << "," 
+                  << "\r\n";
+         } 
+         else {
+              return -1;
+         }  
+         out.close();
+    }
+    else {
+         return -1;
+    }
+    return 0;
+}
