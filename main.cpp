@@ -16,7 +16,7 @@ void * TcpClientUploadProcess(void *);
 int main(int argc, char *argv[]){
     cout << "This is EM133 collector program." << endl;
     CEM133Collector EM133Dev;
-    EM133Dev.SetUpTCPSocket("169.254.142.100", 502);
+    EM133Dev.SetUpTCPSocket("169.254.142.221", 502);
     //EM133Dev.ReadEM133SingleCMD();
     EM133Dev.QuickUpdateLogFile(); 
     cout << EM133Dev.m_Current_Time << endl;

@@ -93,7 +93,7 @@ int CEM133Collector::SaveEM133Data() {
 
     sys_Usec_Time();
     
-    return ((rc1 = -1) || (rc2 = -1) || (rc3 = -1)) ? -1 : 1;
+    return ((rc1 == -1) || (rc2 == -1) || (rc3 == -1)) ? -1 : 1;
 }
  
 string CEM133Collector::sys_Usec_Time()
@@ -263,7 +263,7 @@ int CEM133Collector::FastSaveEM133Data() {
 
     sys_Usec_Time();
     
-    return ((rc1 = -1) || (rc2 = -1) || (rc3 = -1)) ? -1 : 1;
+    return ((rc1 == -1) || (rc2 == -1) || (rc3 == -1)) ? -1 : 1;
 }
 
 int CEM133Collector::FastUpdateLogFile() {
@@ -307,9 +307,19 @@ int CEM133Collector::ReadEM133SingleCMD() {
          #endif
     }
 
+    int rc2 = ReadEM133Data(ctx, 13696, 20, tab_reg);
+    m_tab_reg2.clear();
+    for (int i = 0; i < rc1; i++) {
+         long lTmpData = tab_reg[i] + (tab_reg[++i] << 16);
+         m_tab_reg2.push_back(lTmpData);
+         #ifndef NDEBUG
+             cout << "m_tab_reg2[" << m_tab_reg2.size() - 1 << "]= " << m_tab_reg2.back() << endl;
+         #endif
+    }
+
     sys_Usec_Time();
     
-    return rc1 = -1 ? -1 : 1;
+    return ((rc1 == -1) || (rc2 == -1)) ? -1 : 1;
 }
 
 int CEM133Collector::QuickUpdateLogFile() {
@@ -323,17 +333,22 @@ int CEM133Collector::QuickUpdateLogFile() {
     }
     m_Data_Cnt++;
     if(ReadEM133SingleCMD()) {
-         long lTotal_kW = m_tab_reg1[6] + m_tab_reg1[7] + m_tab_reg1[8];
-         long lTotal_kvar = m_tab_reg1[9] + m_tab_reg1[10] + m_tab_reg1[11];
-         long lTotal_kVA = m_tab_reg1[12] + m_tab_reg1[13] + m_tab_reg1[14];
-         long lTotal_PF = lTotal_kW / lTotal_kVA;
+//         long lTotal_kW = m_tab_reg1[6] + m_tab_reg1[7] + m_tab_reg1[8];
+//         long lTotal_kvar = m_tab_reg1[9] + m_tab_reg1[10] + m_tab_reg1[11];
+//         long lTotal_kVA = m_tab_reg1[12] + m_tab_reg1[13] + m_tab_reg1[14];
+//         long lTotal_PF = lTotal_kW / lTotal_kVA;
          //long lTotal_PF = sqrt((pow(m_tab_reg1[15],2) + pow(m_tab_reg1[16],2) + pow(m_tab_reg1[17], 2)) / 3);
          ofstream out;
          out.open(m_File_Name, ofstream::out | ofstream::app);
          if(out) {
+//              out << m_Current_Time << "," << m_tab_reg1[0] << ","  << m_tab_reg1[1] << ","  << m_tab_reg1[2] << ","  
+//                  << m_tab_reg1[3] << ","  << m_tab_reg1[4] << ","  << m_tab_reg1[5] << ","  
+//                  << lTotal_kW << ","  << lTotal_kvar << ","  << lTotal_kVA << ","  << lTotal_PF << "," 
+//                  << "\r\n";
+
               out << m_Current_Time << "," << m_tab_reg1[0] << ","  << m_tab_reg1[1] << ","  << m_tab_reg1[2] << ","  
                   << m_tab_reg1[3] << ","  << m_tab_reg1[4] << ","  << m_tab_reg1[5] << ","  
-                  << lTotal_kW << ","  << lTotal_kvar << ","  << lTotal_kVA << ","  << lTotal_PF << "," 
+                  << m_tab_reg2[0] << ","  << m_tab_reg2[1] << ","  << m_tab_reg2[2] << ","  << m_tab_reg2[3] << "," 
                   << "\r\n";
          } 
          else {
