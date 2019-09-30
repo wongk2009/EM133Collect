@@ -1,4 +1,5 @@
 #include "CEM133Collector.h" 
+
 CEM133Collector::CEM133Collector(){
     //设置modbus超时时间为1000毫秒
     m_old_response_to_sec = 0;
@@ -129,7 +130,8 @@ int CEM133Collector::Create_New_Log_File() {
     ofstream out;
     out.open(m_File_Name, ofstream::out);
     if(out) {
-         out << "Date,V1,V2,V3,I1,I2,I3,Total kW,Total kvar,Total kVA,Total PF,Frequency" << "\r\n";	
+         //out << "Date,V1,V2,V3,I1,I2,I3,Total kW,Total kvar,Total kVA,Total PF,Frequency" << "\r\n";	
+         out << "Date,V1,V2,V3,I1,I2,I3,Total kW,Total kvar,Total kVA,Total PF,Frequency,kW L1,kW L2,kW L3,kvar L1,kvar L2,kvar L3,kVA L1,kVA L2,kVA L3,Power factor L1,Power factor L2,Power factor L3" << "\r\n";	
     } 
     else {
          return -1;
@@ -341,14 +343,28 @@ int CEM133Collector::QuickUpdateLogFile() {
          ofstream out;
          out.open(m_File_Name, ofstream::out | ofstream::app);
          if(out) {
+             //采1条报文，自动计算总功率
 //              out << m_Current_Time << "," << m_tab_reg1[0] << ","  << m_tab_reg1[1] << ","  << m_tab_reg1[2] << ","  
 //                  << m_tab_reg1[3] << ","  << m_tab_reg1[4] << ","  << m_tab_reg1[5] << ","  
 //                  << lTotal_kW << ","  << lTotal_kvar << ","  << lTotal_kVA << ","  << lTotal_PF << "," 
 //                  << "\r\n";
 
+              //采2条报文
+//              out << m_Current_Time << "," << m_tab_reg1[0] << ","  << m_tab_reg1[1] << ","  << m_tab_reg1[2] << ","  
+//                  << m_tab_reg1[3] << ","  << m_tab_reg1[4] << ","  << m_tab_reg1[5] << ","  
+//                  << m_tab_reg2[0] << ","  << m_tab_reg2[1] << ","  << m_tab_reg2[2] << ","  << m_tab_reg2[3] << "," 
+//                  << "\r\n";
+
+              //采2条报文，写入所有数据
+              int tmpFrequency = 0;
               out << m_Current_Time << "," << m_tab_reg1[0] << ","  << m_tab_reg1[1] << ","  << m_tab_reg1[2] << ","  
                   << m_tab_reg1[3] << ","  << m_tab_reg1[4] << ","  << m_tab_reg1[5] << ","  
                   << m_tab_reg2[0] << ","  << m_tab_reg2[1] << ","  << m_tab_reg2[2] << ","  << m_tab_reg2[3] << "," 
+                  << tmpFrequency << ","
+                  << m_tab_reg1[6] << ","  << m_tab_reg1[7] << ","  << m_tab_reg1[8] << ","  
+                  << m_tab_reg1[9] << ","  << m_tab_reg1[10] << ","  << m_tab_reg1[11] << ","  
+                  << m_tab_reg1[12] << ","  << m_tab_reg1[13] << ","  << m_tab_reg1[14] << ","  
+                  << m_tab_reg1[15] << ","  << m_tab_reg1[16] << ","  << m_tab_reg1[17] << ","  
                   << "\r\n";
          } 
          else {

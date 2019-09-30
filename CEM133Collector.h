@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define NDEBUG
+//#define NDEBUG
 #define MAX_DATA_CNT 100
 #define MAX_FILE_CNT 100
 #define BUFFER_SIZE 1024 
@@ -51,8 +51,7 @@ class CEM133Collector{
 
         int ReadEM133SingleCMD();
         int QuickUpdateLogFile(); 
-
-    private:
+private:
         modbus_t *ctx;
         int sockfd;
         struct sockaddr_in servaddr; 

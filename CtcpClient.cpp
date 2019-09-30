@@ -19,7 +19,7 @@ int CtcpClient::CreateNewTcpSocket(const char *ip, const int port){
     }
     else{
         perror("connect");
-	return -1;
+    	return -1;
     }
     return 0;
 }
@@ -28,9 +28,10 @@ unsigned long CtcpClient::get_file_size(const char *path){
     unsigned long filesize = -1;	
     struct stat statbuff;
     if(stat(path, &statbuff) < 0){
-	return filesize;
-    }else{
-	filesize = statbuff.st_size;
+    	return filesize;
+    }
+    else{
+    	filesize = statbuff.st_size;
     }
     return filesize;
 }
@@ -60,7 +61,10 @@ string CtcpClient::Get_Current_File_Name() {
 }
 
 int CtcpClient::Upload_File() {
-    CreateNewTcpSocket("193.112.215.89", 1502);
+    int iConnectResult = CreateNewTcpSocket("192.168.2.103", 1502);
+    if(iConnectResult == -1) {
+        return -1;
+    }
 
     string file_name = Get_Current_File_Name(); 
     memset(buffer, 0, BUFFER_SIZE);
@@ -68,7 +72,7 @@ int CtcpClient::Upload_File() {
     FILE* fp = fopen(file_name.c_str(), "rb"); //windows下是"rb",表示打开一个只读的二进制文件 
     if (NULL == fp)
     {
-	printf("File: %s Not Found\n", file_name.c_str());
+    	printf("File: %s Not Found\n", file_name.c_str());
         return -1;
     }
     else
@@ -83,9 +87,9 @@ int CtcpClient::Upload_File() {
         if (send(sockfd, buffer, BUFFER_SIZE, 0) < 0)
         {
         	printf("Send File Name Failed\n");
-                return -1;
+            return -1;
         }
-	memset(buffer, 0, BUFFER_SIZE);
+	    memset(buffer, 0, BUFFER_SIZE);
 
         m_Full_Size = get_file_size(file_name.c_str());
         string strFileSize = to_string(m_Full_Size);
@@ -94,32 +98,33 @@ int CtcpClient::Upload_File() {
         if (send(sockfd, buffer, BUFFER_SIZE, 0) < 0)
         {
         	printf("Send File Name Failed\n");
-                return -1;
+            return -1;
         }
-	memset(buffer, 0, BUFFER_SIZE);
+	    memset(buffer, 0, BUFFER_SIZE);
 
-	int length = 0;
-	while ((length = fread(buffer, sizeof(char), BUFFER_SIZE, fp)) > 0)
-	{
-                m_Sent_Size += length;
-                m_Remained_Size = m_Full_Size - m_Sent_Size;
-          	if (send(sockfd, buffer, length, 0) < 0)
-		{
-			printf("Send File: %s Failed\n", file_name.c_str());
-			break;
-		}
-		memset(buffer, 0, BUFFER_SIZE);
-	}
+    	int length = 0;
+    	while ((length = fread(buffer, sizeof(char), BUFFER_SIZE, fp)) > 0)
+    	{
+                    m_Sent_Size += length;
+                    m_Remained_Size = m_Full_Size - m_Sent_Size;
+              	if (send(sockfd, buffer, length, 0) < 0)
+    		{
+    			printf("Send File: %s Failed\n", file_name.c_str());
+    			break;
+    		}
+    		memset(buffer, 0, BUFFER_SIZE);
+    	}
 
         m_Sent_Size = 0;
         m_Full_Size = 0;
         m_Remained_Size = 0;
-	fclose(fp);
-	printf("File: %s Transfer Successful!\n", file_name.c_str());
+	    fclose(fp);
+	    printf("File: %s Transfer Successful!\n", file_name.c_str());
         if(remove(file_name.c_str()) < 0)
         {
            cout << "Remove File Failed!" << endl;        
         }
     }
+    close(sockfd);
     return 0;
 }
