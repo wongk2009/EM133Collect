@@ -43,7 +43,7 @@ class CtcpClient{
         char buffer[BUFFER_SIZE];
 
         string Get_Current_File_Name();
-        unsigned long get_file_size(const char *);
+        unsigned long Get_File_Size(const char *);
 };
 
 

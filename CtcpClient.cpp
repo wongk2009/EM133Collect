@@ -8,7 +8,15 @@ CtcpClient::~CtcpClient(){
     close(sockfd);
 }
 
-int CtcpClient::CreateNewTcpSocket(const char *ip, const int port){
+/***************************************************************************************
+*函数：CreateNewTcpSocket
+*描述：创建tcp socket；
+*参数：
+*   ip：tcp连接的ip地址，默认ip为127.0.0.1；
+*   port：tcp连接的端口，默认端口为502；
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
+int CtcpClient::CreateNewTcpSocket(const char *ip = "127.0.0.1", const int port = 502){
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
@@ -24,7 +32,14 @@ int CtcpClient::CreateNewTcpSocket(const char *ip, const int port){
     return 0;
 }
 
-unsigned long CtcpClient::get_file_size(const char *path){
+/***************************************************************************************
+*函数：Get_File_Size
+*描述：获取文件大小；
+*参数：
+*   path：读取文件的路径；
+*返回值：成功返回文件的大小，否则返回-1。
+***************************************************************************************/
+unsigned long CtcpClient::Get_File_Size(const char *path){
     unsigned long filesize = -1;	
     struct stat statbuff;
     if(stat(path, &statbuff) < 0){
@@ -36,6 +51,13 @@ unsigned long CtcpClient::get_file_size(const char *path){
     return filesize;
 }
 
+/***************************************************************************************
+*函数：Get_Current_File_Name
+*描述：获取当前待上传文件的文件名
+*参数：
+*   无
+*返回值：返回文件的大小。
+***************************************************************************************/
 string CtcpClient::Get_Current_File_Name() {
     do {
         m_File_Name = str_File_Name_Prefix + to_string(m_File_Cnt) + str_File_Name_Suffix;
@@ -60,6 +82,13 @@ string CtcpClient::Get_Current_File_Name() {
     } while(1);
 }
 
+/***************************************************************************************
+*函数：Upload_File
+*描述：上传数据文件；
+*参数：
+*   无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CtcpClient::Upload_File() {
     int iConnectResult = CreateNewTcpSocket("192.168.2.103", 1502);
     if(iConnectResult == -1) {
@@ -91,7 +120,7 @@ int CtcpClient::Upload_File() {
         }
 	    memset(buffer, 0, BUFFER_SIZE);
 
-        m_Full_Size = get_file_size(file_name.c_str());
+        m_Full_Size = Get_File_Size(file_name.c_str());
         string strFileSize = to_string(m_Full_Size);
         strncpy(buffer, strFileSize.c_str(), strlen(strFileSize.c_str()) > BUFFER_SIZE ? BUFFER_SIZE : strlen(strFileSize.c_str()));
         //向服务器发送文件大小 

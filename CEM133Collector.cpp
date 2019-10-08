@@ -15,6 +15,14 @@ CEM133Collector::~CEM133Collector(){
 
 }
 
+/***************************************************************************************
+*函数：SetUpTCPSocket
+*描述：建立EM133 socket连接（采用libmodbus第三方库）；
+*参数：
+*    ip：EM133的ip地址，默认为127.0.0.1；
+*    port：EM133的端口地址，默认为1502；
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::SetUpTCPSocket(const char *ip = "127.0.0.1", int port = 1502){
     ctx = modbus_new_tcp(ip, port);
     modbus_set_debug(ctx, TRUE);
@@ -42,6 +50,14 @@ int CEM133Collector::SetUpTCPSocket(const char *ip = "127.0.0.1", int port = 150
     return 0;
 }
 
+/***************************************************************************************
+*函数：SetUpTCPSocket
+*描述：建立EM133 socket连接（采用libmodbus第三方库）；
+*参数：
+*    ip：EM133的ip地址，默认为127.0.0.1；
+*    port：EM133的端口地址，默认为1502；
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::ReadEM133Data(modbus_t *ctx, int addr, int nb, uint16_t *dest) {
     int rc = modbus_read_registers(ctx, addr, nb, dest);
     if (rc == -1) {
@@ -57,12 +73,26 @@ int CEM133Collector::ReadEM133Data(modbus_t *ctx, int addr, int nb, uint16_t *de
     return rc;
 }
 
+/***************************************************************************************
+*函数：CloseTCPServer
+*描述：关闭EM133 socket；
+*参数：
+*    ctx：EM133的socket文件描述符；
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::CloseTCPServer(modbus_t *ctx) {
     modbus_close(ctx);
     modbus_free(ctx);
     return 0;
 }
 
+/***************************************************************************************
+*函数：SaveEM133Data
+*描述：保存EM133S数据；
+*参数：
+*    无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::SaveEM133Data() {
     int rc1 = ReadEM133Data(ctx, 13312, 30, tab_reg);
     m_tab_reg1.clear();
@@ -97,6 +127,13 @@ int CEM133Collector::SaveEM133Data() {
     return ((rc1 == -1) || (rc2 == -1) || (rc3 == -1)) ? -1 : 1;
 }
  
+/***************************************************************************************
+*函数：sys_Usec_Time
+*描述：获取系统时间；
+*参数：
+*    无
+*返回值：返回系统时间string；
+***************************************************************************************/
 string CEM133Collector::sys_Usec_Time()
 {
     struct timeval tv;
@@ -125,6 +162,13 @@ string CEM133Collector::sys_Usec_Time()
     return m_Current_Time;
 }
 
+/***************************************************************************************
+*函数：Creat_New_Log_File
+*描述：创建新的数据文件；
+*参数：
+*    无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::Create_New_Log_File() {
     m_File_Name = str_File_Name_Prefix + to_string(m_File_Cnt) + str_File_Name_Suffix;
     ofstream out;
@@ -140,6 +184,13 @@ int CEM133Collector::Create_New_Log_File() {
     return 0;
 }
 
+/***************************************************************************************
+*函数：UpdateLogFile
+*描述：更新数据文件，将新读取的数据写入数据文件中（采用libmodbus第三方库）；
+*参数：
+*    无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::UpdateLogFile() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
@@ -170,6 +221,14 @@ int CEM133Collector::UpdateLogFile() {
     return 0;
 }
 
+/***************************************************************************************
+*函数：SetUpFastTCPSocket
+*描述：创建EM133 socket连接（采用Linux C库）；
+*参数：
+*    ip：EM133的ip地址，默认为127.0.0.1；
+*    port：EM133的端口地址，默认为1502；
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::SetUpFastTCPSocket(const char *ip = "127.0.0.1", int port = 1502){
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     bzero(&servaddr, sizeof(servaddr));
@@ -189,6 +248,16 @@ int CEM133Collector::SetUpFastTCPSocket(const char *ip = "127.0.0.1", int port =
     return 0;
 }
 
+/***************************************************************************************
+*函数：FastReadEM133Data
+*描述：读取EM133数据（使用Linux C库）；
+*参数：
+*    ctx：EM133的socket文件描述符；
+*    addr：读取的地址；
+*    nb：读取的数据数量；
+*    dest：保存数据的数组首地址；
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::FastReadEM133Data(int sockfd, int addr, int nb, uint16_t *dest) {
     uint16_t Transaction_ID_Hi = (m_Transaction_ID >> 8) & 0xFF;
     uint16_t Transaction_ID_Lo = m_Transaction_ID & 0xFF;
@@ -234,6 +303,13 @@ int CEM133Collector::FastReadEM133Data(int sockfd, int addr, int nb, uint16_t *d
     return rc;
 }
 
+/***************************************************************************************
+*函数：FastSaveEM133Data
+*描述：保存EM133S数据（使用Linux C库）；
+*参数：
+*    无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::FastSaveEM133Data() {
     int rc1 = FastReadEM133Data(sockfd, 13312, 30, tab_reg);
     m_tab_reg1.clear();
@@ -268,6 +344,13 @@ int CEM133Collector::FastSaveEM133Data() {
     return ((rc1 == -1) || (rc2 == -1) || (rc3 == -1)) ? -1 : 1;
 }
 
+/***************************************************************************************
+*函数：FastUpdateLogFile
+*描述：更新数据文件，将新读取的数据写入数据文件中（使用Linux C库）；
+*参数：
+*    无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::FastUpdateLogFile() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
@@ -298,6 +381,13 @@ int CEM133Collector::FastUpdateLogFile() {
     return 0;
 }
 
+/***************************************************************************************
+*函数：ReadEM133SingleCMD
+*描述：读取EM133两条报文；
+*参数：
+*    无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::ReadEM133SingleCMD() {
     int rc1 = ReadEM133Data(ctx, 13312, 36, tab_reg);
     m_tab_reg1.clear();
@@ -324,6 +414,13 @@ int CEM133Collector::ReadEM133SingleCMD() {
     return ((rc1 == -1) || (rc2 == -1)) ? -1 : 1;
 }
 
+/***************************************************************************************
+*函数：QuickUpdateLogFile
+*描述：读取EM133两条报文，并将读取的数据写入到数据文件中；
+*参数：
+*    无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
 int CEM133Collector::QuickUpdateLogFile() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
