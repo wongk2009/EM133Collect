@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <cstdio>
 
-#define BUFFER_SIZE 1024 
+#define BUFFER_SIZE 1024
 #define FILE_NAME_MAX_SIZE 512 
 
 using namespace std;
