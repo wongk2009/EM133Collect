@@ -9,6 +9,7 @@ CEM133Collector::CEM133Collector(){
     sys_Usec_Time();
     system("mkdir Data/");
     Create_New_Log_File();
+	system("rm Data/*");
 }
 
 CEM133Collector::~CEM133Collector(){

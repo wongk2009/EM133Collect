@@ -66,6 +66,10 @@ void * TcpClientUploadProcess(void *) {
     TcpClientDev.CreateNewTcpSocket("122.51.1.204", 1502);
     while(1) {
         Connect_Status = TcpClientDev.Upload_File();
+		TcpClientDev.CreateNewTcpSocket("122.51.1.204", 1502);
+//		if(Connect_Status == 1) {
+//			TcpClientDev.CreateNewTcpSocket("122.51.1.204", 1502);
+//		}
         //sleep(1);
     }
     pthread_exit(NULL);      

@@ -14,6 +14,8 @@
 #include <errno.h>
 #include <cstdio>
 
+#define SERVER_IP "122.51.1.204"
+#define SERVER_PORT 1502
 #define BUFFER_SIZE 1024
 #define FILE_NAME_MAX_SIZE 512 
 
@@ -23,6 +25,8 @@ class CtcpClient{
     public:
         CtcpClient();
         ~CtcpClient();
+
+		struct timeval timeout = {5,0}; 
 
         int CreateNewTcpSocket(const char *ip, const int port);
         int Upload_File();
