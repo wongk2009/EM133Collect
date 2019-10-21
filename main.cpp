@@ -46,17 +46,11 @@ void * EM133DataProcess(void *) {
     EM133Dev.SetUpTCPSocket("192.168.146.100", 502);
     //EM133Dev.SetUpFastTCPSocket("192.168.146.100", 502);
     while(1) {
-//	if(Connect_Status != 1) {
-//            //EM133Dev.UpdateLogFile();
-//            //EM133Dev.FastUpdateLogFile();
-//            EM133Dev.QuickUpdateLogFile(); 
-//            //sleep(1);
-//	}
-//	else {
-//            //等待；
-//	}
-        EM133Dev.QuickUpdateLogFile(); 
-	//sleep(1);
+        int Update_Status = EM133Dev.QuickUpdateLogFile(); 
+		if(Update_Status == -1) {
+			EM133Dev.CloseTCPSocket();
+			EM133Dev.SetUpTCPSocket("192.168.146.100", 502);
+		}
     }
     pthread_exit(NULL);      
 }
@@ -65,11 +59,11 @@ void * TcpClientUploadProcess(void *) {
     CtcpClient TcpClientDev;
     TcpClientDev.CreateNewTcpSocket("122.51.1.204", 1502);
     while(1) {
+		if(Connect_Status == 1) {
+			TcpClientDev.CreateNewTcpSocket("122.51.1.204", 1502);
+		}
         Connect_Status = TcpClientDev.Upload_File();
-		TcpClientDev.CreateNewTcpSocket("122.51.1.204", 1502);
-//		if(Connect_Status == 1) {
-//			TcpClientDev.CreateNewTcpSocket("122.51.1.204", 1502);
-//		}
+		//TcpClientDev.CreateNewTcpSocket("122.51.1.204", 1502);
         //sleep(1);
     }
     pthread_exit(NULL);      

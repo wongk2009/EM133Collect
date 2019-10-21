@@ -23,16 +23,9 @@ int CtcpClient::CreateNewTcpSocket(const char *ip = "127.0.0.1", const int port 
     servaddr.sin_port = htons(port); 
     inet_pton(AF_INET, ip, &servaddr.sin_addr); 
 
-	setsockopt(sockfd,SOL_SOCKET,SO_RCVTIMEO,(const char*)&timeout,sizeof(timeout));
+	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout,sizeof(timeout));
+	setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout,sizeof(timeout));
 
-    if(connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == 0){
-        printf("Connect %s successfully!\n", ip);
-    }
-    else{
-        perror("connect");
-        //close(sockfd);
-    	return -1;
-    }
     return 0;
 }
 
@@ -65,6 +58,17 @@ unsigned long CtcpClient::Get_File_Size(const char *path){
 string CtcpClient::Get_Current_File_Name() {
     string strEmptyFile;
     do {
+	    //是否已经重头开始保存文件
+		if(m_File_Cnt == FILE_MAX_CNT) {
+            ifstream in_RestartFg;
+		    in_RestartFg.open("Data/common.1.csv");
+		    if(in_RestartFg) {    
+				m_File_Name = str_File_Name_Prefix + to_string(m_File_Cnt) + str_File_Name_Suffix;
+			    m_Current_File_Name = m_File_Name;
+			    m_File_Cnt = 1;
+		        return m_Current_File_Name;
+		    }
+		}
         m_File_Name = str_File_Name_Prefix + to_string(m_File_Cnt) + str_File_Name_Suffix;
         ifstream in_init;
         in_init.open(m_File_Name);
@@ -78,7 +82,7 @@ string CtcpClient::Get_Current_File_Name() {
                 return m_Current_File_Name;
             }
             else {
-                //return strEmptyFile;
+                return strEmptyFile;
             }
         }
         else {
@@ -93,20 +97,25 @@ string CtcpClient::Get_Current_File_Name() {
 *参数：
 *   无
 *返回值：0：文件发送成功;
-*        1：网络连接失败；
+*        1：心跳连接失败；
 *        2：发送文件不存在；
 *        3：发送文件名失败；
 *        4：发送文件大小失败；
 *        5：文件发送错误；
-*        6：删除已发送文件失败。
+*        6：删除已发送文件失败，
+*        7：socket连接失败。
 ***************************************************************************************/
 int CtcpClient::Upload_File() {
     int error_code = 0;
-//    int iConnectResult = CreateNewTcpSocket(SERVER_IP, SERVER_PORT);
-//    if(iConnectResult == -1) {
-//        close(sockfd);
-//        return 1;
-//    }
+	if(connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == 0){
+			printf("Connect %s successfully!\n", SERVER_IP);
+		}
+		else{
+			perror("connect");
+			close(sockfd);
+			return 1;
+		}
+
 
 	//发送心跳包
 	memset(buffer, 0, BUFFER_SIZE);
@@ -114,7 +123,7 @@ int CtcpClient::Upload_File() {
 	if (send(sockfd, buffer, BUFFER_SIZE, 0) < 0)
     {
             #ifndef NDEBUG
-    		    printf("Server Connect Failed!\n");
+    		    printf("Server Connect Send Failed!\n");
     		#endif
             close(sockfd);
             return 1;
@@ -125,7 +134,7 @@ int CtcpClient::Upload_File() {
 	if (recv(sockfd, buffer, BUFFER_SIZE, 0) < 0)
 	{
 		    #ifndef NDEBUG
-			    printf("Server Connect Failed!\n");
+			    printf("Server Connect Receive Failed!\n");
 		    #endif 
 			close(sockfd);
 		    return 1;
@@ -142,6 +151,13 @@ int CtcpClient::Upload_File() {
 
 	//获取文件名
     string file_name = Get_Current_File_Name(); 
+	if(file_name.empty()){
+		#ifndef NDEBUG
+			printf("File Not Found!\n");
+		#endif
+		//close(sockfd);
+		return 2;
+	}
     memset(buffer, 0, BUFFER_SIZE);
 
     FILE* fp = fopen(file_name.c_str(), "rb"); //windows下是"rb",表示打开一个只读的二进制文件 
@@ -167,7 +183,7 @@ int CtcpClient::Upload_File() {
                 #ifndef NDEBUG
     		        printf("Send File Name Failed\n");
     		    #endif
-                //close(sockfd);
+                close(sockfd);
                 return 3;
         }
         memset(buffer, 0, BUFFER_SIZE);
@@ -181,7 +197,7 @@ int CtcpClient::Upload_File() {
                 #ifndef NDEBUG
                     printf("Send File Size Failed\n");
                 #endif
-                //close(sockfd);
+                close(sockfd);
                 return 4;
         }
         memset(buffer, 0, BUFFER_SIZE);
@@ -190,14 +206,16 @@ int CtcpClient::Upload_File() {
     	while ((length = fread(buffer, sizeof(char), BUFFER_SIZE, fp)) > 0)
     	{
                m_Sent_Size += length;
-               m_Remained_Size = m_Full_Size - m_Sent_Size; if (send(sockfd, buffer, length, 0) < 0) {
-	            #ifndef NDEBUG
-    		        printf("Send File: %s Failed\n", file_name.c_str());
-		            perror("Send Error:");
-		        #endif
-	            error_code = 5;
-    		    break;
-    	    }
+               m_Remained_Size = m_Full_Size - m_Sent_Size; 
+			   if (send(sockfd, buffer, length, 0) < 0) {
+		            #ifndef NDEBUG
+	    		        printf("Send File: %s Failed\n", file_name.c_str());
+			            perror("Send Error:");
+			        #endif
+					close(sockfd);
+		            return 5;
+	    		    //break;
+    	       }
     	    memset(buffer, 0, BUFFER_SIZE);
     	}
 
@@ -214,6 +232,6 @@ int CtcpClient::Upload_File() {
 	        error_code = 6;
         }
     }
-    close(sockfd);
+    //close(sockfd);
     return error_code;
 }

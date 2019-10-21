@@ -8,12 +8,14 @@ CEM133Collector::CEM133Collector(){
     
     sys_Usec_Time();
     system("mkdir Data/");
-    Create_New_Log_File();
 	system("rm Data/*");
+	Create_New_Log_File();
 }
 
 CEM133Collector::~CEM133Collector(){
-
+    close(sockfd);
+	modbus_close(ctx);
+	modbus_free(ctx);
 }
 
 /***************************************************************************************
@@ -50,6 +52,24 @@ int CEM133Collector::SetUpTCPSocket(const char *ip = "127.0.0.1", int port = 150
     modbus_get_response_timeout(ctx, &m_old_response_to_sec, &m_old_response_to_usec);
     return 0;
 }
+
+/***************************************************************************************
+*函数：CloseTCPSocket
+*描述：关闭EM133 socket连接（采用libmodbus第三方库）；
+*参数：
+*    无
+*返回值：成功返回0，否则返回-1。
+***************************************************************************************/
+int CEM133Collector::CloseTCPSocket() {
+	modbus_close(ctx);
+	modbus_free(ctx);
+	int rc = close(sockfd);
+    if(rc == -1) {
+		return -1;
+    }
+	return 0;
+}
+
 
 /***************************************************************************************
 *函数：SetUpTCPSocket
@@ -125,7 +145,7 @@ int CEM133Collector::SaveEM133Data() {
 
     sys_Usec_Time();
     
-    return ((rc1 == -1) || (rc2 == -1) || (rc3 == -1)) ? -1 : 1;
+    return ((rc1 == -1) || (rc2 == -1) || (rc3 == -1)) ? -1 : 0;
 }
  
 /***************************************************************************************
@@ -196,13 +216,14 @@ int CEM133Collector::UpdateLogFile() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
          m_File_Cnt++;
-         if(m_File_Cnt == MAX_FILE_CNT) {
+         if(m_File_Cnt == MAX_FILE_CNT + 1) {
              m_File_Cnt = 1;
          }
          Create_New_Log_File();
     }
     m_Data_Cnt++;
-    if(SaveEM133Data()) {
+	int rc = SaveEM133Data();
+    if(rc == 0) {
          ofstream out;
          out.open(m_File_Name, ofstream::out | ofstream::app);
          if(out) {
@@ -257,7 +278,7 @@ int CEM133Collector::SetUpFastTCPSocket(const char *ip = "127.0.0.1", int port =
 *    addr：读取的地址；
 *    nb：读取的数据数量；
 *    dest：保存数据的数组首地址；
-*返回值：成功返回0，否则返回-1。
+*返回值：成功返回读取数据的数量，否则返回-1。
 ***************************************************************************************/
 int CEM133Collector::FastReadEM133Data(int sockfd, int addr, int nb, uint16_t *dest) {
     uint16_t Transaction_ID_Hi = (m_Transaction_ID >> 8) & 0xFF;
@@ -342,7 +363,7 @@ int CEM133Collector::FastSaveEM133Data() {
 
     sys_Usec_Time();
     
-    return ((rc1 == -1) || (rc2 == -1) || (rc3 == -1)) ? -1 : 1;
+    return ((rc1 == -1) || (rc2 == -1) || (rc3 == -1)) ? -1 : 0;
 }
 
 /***************************************************************************************
@@ -356,13 +377,14 @@ int CEM133Collector::FastUpdateLogFile() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
          m_File_Cnt++;
-         if(m_File_Cnt == MAX_FILE_CNT) {
+         if(m_File_Cnt == MAX_FILE_CNT + 1) {
              m_File_Cnt = 1;
          }
          Create_New_Log_File();
     }
     m_Data_Cnt++;
-    if(FastSaveEM133Data()) {
+	int rc = FastSaveEM133Data();
+    if(rc == 0) {
          ofstream out;
          out.open(m_File_Name, ofstream::out | ofstream::app);
          if(out) {
@@ -412,7 +434,7 @@ int CEM133Collector::ReadEM133SingleCMD() {
 
     sys_Usec_Time();
     
-    return ((rc1 == -1) || (rc2 == -1)) ? -1 : 1;
+    return ((rc1 == -1) || (rc2 == -1)) ? -1 : 0;
 }
 
 /***************************************************************************************
@@ -426,13 +448,14 @@ int CEM133Collector::QuickUpdateLogFile() {
     if(m_Data_Cnt == MAX_DATA_CNT) {
          m_Data_Cnt = 0;
          m_File_Cnt++;
-         if(m_File_Cnt == MAX_FILE_CNT) {
+         if(m_File_Cnt == MAX_FILE_CNT + 1) {
              m_File_Cnt = 1;
          }
          Create_New_Log_File();
     }
     m_Data_Cnt++;
-    if(ReadEM133SingleCMD()) {
+	int rc =ReadEM133SingleCMD();
+    if(rc == 0) {
 //         long lTotal_kW = m_tab_reg1[6] + m_tab_reg1[7] + m_tab_reg1[8];
 //         long lTotal_kvar = m_tab_reg1[9] + m_tab_reg1[10] + m_tab_reg1[11];
 //         long lTotal_kVA = m_tab_reg1[12] + m_tab_reg1[13] + m_tab_reg1[14];

@@ -15,11 +15,13 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
+
 
 using namespace std;
 
 #define NDEBUG
-#define MAX_DATA_CNT 100
+#define MAX_DATA_CNT 10000
 #define MAX_FILE_CNT 1000
 #define BUFFER_SIZE 1024 
 
@@ -38,6 +40,7 @@ class CEM133Collector{
         string m_Current_Time;
 
         int SetUpTCPSocket(const char *ip, int port);
+		int CloseTCPSocket();
         int ReadEM133Data(modbus_t *ctx, int addr, int nb, uint16_t *dest);
         int CloseTCPServer(modbus_t *ctx);
         int SaveEM133Data();

@@ -18,6 +18,7 @@
 #define SERVER_PORT 1502
 #define BUFFER_SIZE 1024
 #define FILE_NAME_MAX_SIZE 512 
+#define FILE_MAX_CNT 1000
 
 using namespace std;
 
@@ -26,7 +27,7 @@ class CtcpClient{
         CtcpClient();
         ~CtcpClient();
 
-		struct timeval timeout = {5,0}; 
+		struct timeval timeout = {3,0}; 
 
         int CreateNewTcpSocket(const char *ip, const int port);
         int Upload_File();
